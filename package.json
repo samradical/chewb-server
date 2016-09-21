@@ -36,7 +36,6 @@
     "rimraf": "^2.5.3",
     "socket.io": "1.4.4",
     "tmp": "0.0.28",
-    "typedarray-to-buffer": "^3.1.2",
     "uuid": "^2.0.2",
     "x-ray": "^2.0.3",
     "yargs": "3.32.0"

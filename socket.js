@@ -12,7 +12,6 @@ var tmp = require('tmp');
 var request = require('request');
 var SIDX = require('@samelie/node-youtube-dash-sidx');
 var DASHSAVE = require('@samelie/mp4-dash-record');
-var toBuffer = require('typedarray-to-buffer')
 
 
 const USER_AGENT = `User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36`
