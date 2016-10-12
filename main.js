@@ -39,12 +39,7 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 
 app.use(cors());
 let _port = process.env.PORT || 8080
-var server = app.listen(_port, function() {
-    var host = server.address().address || '127.0.0.1';
-    var port = server.address().port;
-    console.log("listening on port: ", port, "at ", host);
-    console.log(host, port);
-});
+var server = app.listen(_port, '127.0.0.1')
 
 io = require('./socket')(server);
 

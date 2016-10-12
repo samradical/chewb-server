@@ -1,6 +1,7 @@
 var io = require('socket.io');
 var ip = require('ip');
 var fs = require('fs');
+var path = require('path');
 var stream = require('stream');
 var _ = require('lodash');
 var ffmpeg = require('fluent-ffmpeg');
@@ -12,11 +13,11 @@ var tmp = require('tmp');
 var request = require('request');
 var SIDX = require('@samelie/node-youtube-dash-sidx');
 var DASHSAVE = require('@samelie/mp4-dash-record');
-var UPLOAD = require('@samelie/youtube-uploader');
+//var UPLOAD = require('@samelie/youtube-uploader');
 var REDIS = require('@samelie/chewb-redis');
 var YT = require('./services/youtube');
 
-UPLOAD.init({ "web": { "client_id": "791164201854-59lj1a5dd75moqgfr4fj63ug604pmq03.apps.googleusercontent.com", "project_id": "samtest-144107", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://accounts.google.com/o/oauth2/token", "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "client_secret": "VjcK9-gpfLnjWJuIXsEsAPUS", "redirect_uris": ["http://localhost:5000/oauth2callback"], "javascript_origins": ["http://localhost:5000"] } }, 'PLuTh1a1eg5vZavHvi60x_7SDq_pm4W4ID')
+//UPLOAD.init({ "web": { "client_id": "791164201854-59lj1a5dd75moqgfr4fj63ug604pmq03.apps.googleusercontent.com", "project_id": "samtest-144107", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://accounts.google.com/o/oauth2/token", "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "client_secret": "VjcK9-gpfLnjWJuIXsEsAPUS", "redirect_uris": ["http://localhost:5000/oauth2callback"], "javascript_origins": ["http://localhost:5000"] } }, 'PLuTh1a1eg5vZavHvi60x_7SDq_pm4W4ID')
 
 const USER_AGENT = `User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36`
 
@@ -59,21 +60,21 @@ var SOCKET = function(express) {
 
     users[socket.id].onRecorderStart = (val) => {
       RECORDER.start((id) => {
-        emit(users[socket.id],'recorder:started', id)
+        emit(users[socket.id], 'recorder:started', id)
       })
     }
 
     users[socket.id].onRecorderImageSave = (image, id) => {
       console.log("socket.onRecorderImageSave");
       RECORDER.saveImage(image, id, () => {
-        emit(users[socket.id],'recorder:image:saved')
+        emit(users[socket.id], 'recorder:image:saved')
       })
     }
 
     users[socket.id].onRecorderVideoSave = (obj, id) => {
       console.log("socket.onRecorderVideoSave");
       RECORDER.saveVideo(obj, id, (savePath) => {
-        emit(users[socket.id],'recorder:video:saved', savePath)
+        emit(users[socket.id], 'recorder:video:saved', savePath)
       })
     }
 
@@ -92,7 +93,7 @@ var SOCKET = function(express) {
             SIDX.getURL(sidx.videoId, sidx.itag)
               .then(url => {
                 sidx.url = url
-                emit(users[socket.id],`rad:youtube:sidx:${obj.uuid}:resp`, sidx)
+                emit(users[socket.id], `rad:youtube:sidx:${obj.uuid}:resp`, sidx)
               })
           } else {
             console.log(`Getting sidx manifest for ${obj.uuid}`);
@@ -101,12 +102,12 @@ var SOCKET = function(express) {
                 let manifestData = data
                 REDIS.setSidx(obj.uuid, manifestData)
                 console.log(`Set REDIS sidx manifest for ${obj.uuid}`);
-                emit(users[socket.id],`rad:youtube:sidx:${obj.uuid}:resp`, manifestData)
+                emit(users[socket.id], `rad:youtube:sidx:${obj.uuid}:resp`, manifestData)
               }
             }).catch((e) => {
               console.log(`Error on getting sidx ${obj.uuid}`);
               if (users[socket.id]) {
-                emit(users[socket.id],`rad:youtube:sidx:${obj.uuid}:resp`,
+                emit(users[socket.id], `rad:youtube:sidx:${obj.uuid}:resp`,
                   generateError(`Failed to get sidx for ${obj.uuid}`, {
                     videoId: obj.id
                   })
@@ -137,7 +138,7 @@ var SOCKET = function(express) {
           .then((items) => {
             console.log(`Got REDIS playlistItems ${playlistId}`);
             let _playlistItems = { items: items }
-            emit(users[socket.id],`rad:youtube:playlist:items:resp`, _playlistItems)
+            emit(users[socket.id], `rad:youtube:playlist:items:resp`, _playlistItems)
           })
           .catch(err => {
             console.log(err.message);
@@ -145,7 +146,7 @@ var SOCKET = function(express) {
             _requestYoutubePlaylistItems(obj)
               .then(playlistItems => {
                 REDIS.setYoutubePlaylistItems(playlistId, playlistItems).finally()
-                emit(users[socket.id],`rad:youtube:playlist:items:resp`, playlistItems)
+                emit(users[socket.id], `rad:youtube:playlist:items:resp`, playlistItems)
               })
           })
       }
@@ -154,6 +155,7 @@ var SOCKET = function(express) {
     /*
     NOT SAVING THE INDEX BUFFER, always false
     */
+    var indexBuffer, rangeBuffer
     users[socket.id].onRadVideo = (obj) => {
       var url = obj.url
       var _o = {
@@ -168,34 +170,58 @@ var SOCKET = function(express) {
         _o.url += '&range=' + obj.range;
       }
 
-      console.log(`Requesting range ${obj.range} `);
+      var _indexBuffer, _rangeBuffer
+      console.log(`Requesting range ${obj.range} : isIndexRange ${obj.isIndexRange}`);
       var r = request(_o)
-      var indexBuffer
 
       r.on('data', (chunk) => {
+
         if (users[socket.id]) {
-          /*if (obj.isIndexBuffer) {
-            let _b
-            if (indexBuffer) {
-              let _l = indexBuffer.length + chunk.length
-              _b = Buffer.concat([indexBuffer], _l)
-              indexBuffer = _b
-            } else {
-              indexBuffer = chunk
-            }
+            //GOOOD BUT SLOW
+          /*if (obj.isIndexRange) {
+            DASHSAVE.addIndex(chunk, obj.uuid)
+          } else {
+            DASHSAVE.addRange(chunk, obj.uuid)
           }*/
-          emit(users[socket.id],`rad:video:range:${obj.uuid}:resp`, chunk)
+          emit(users[socket.id], `rad:video:range:${obj.uuid}:resp`, chunk)
         }
       });
 
       r.on('end', () => {
         if (users[socket.id]) {
-          console.log(`Finished range request`);
-          emit(users[socket.id],`rad:video:range:${obj.uuid}:end`)
-          if (obj.isIndexBuffer) {
-            /*REDIS.setIndexRange(obj.uuid, indexBuffer)
-            indexBuffer.fill(0)
-            indexBuffer = null*/
+          console.log(`Finished range request ${obj.end} ${obj.duration}`);
+          emit(users[socket.id], `rad:video:range:${obj.uuid}:end`)
+          if (!obj.isIndexRange && obj.end) {
+            /*let _l = indexBuffer.length + rangeBuffer.length
+            let _b = Buffer.concat([indexBuffer, rangeBuffer], _l)*/
+            //indexBuffer.fill(0)
+            //rangeBuffer.fill(0)
+
+
+            //GOOOD BUT SLOW
+            /*DASHSAVE.save(
+                path.join(__dirname, '_out'),
+                obj.uuid, {
+                  duration: obj.duration
+                }
+              ).then(path => {
+                console.log(path);
+                io.emit('play-video', {
+                  path: path,
+                  intData: 5,
+                  floatData: 0.5,
+                  boolData: true
+                })
+              })*/
+
+
+              /*REDIS.setIndexRange(obj.uuid, indexBuffer)
+              indexBuffer.fill(0)
+              indexBuffer = null*/
+          } else if (obj.isIndexRange) {
+            /*DASHSAVE.addIndex(
+              new Buffer(indexBuffer)
+            )*/
           }
         }
       });
@@ -245,7 +271,7 @@ var SOCKET = function(express) {
       DASHSAVE.save(__dirname + '/_out')
         .then(response => {
           console.log(response);
-          emit(users[socket.id],'rad:video:save:success', response)
+          emit(users[socket.id], 'rad:video:save:success', response)
         })
     }
 
