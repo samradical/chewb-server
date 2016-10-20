@@ -7,17 +7,16 @@ var YT_KEY = "AIzaSyCebfDVAnfQw4wocPjNo7Czwndt7z9ArvA";
 
 
 module.exports = (function() {
-  function search(q) {
+  function search(obj) {
 
-    var params = {
+    var params = _.assign({},{
       part: 'snippet',
-      q: q,
       videoDuration: 'any',
       maxResults: 50,
       type: 'video',
       safeSearch: 'none',
       key: YT_KEY
-    };
+    },obj);
 
     return rq({
       url: 'https://www.googleapis.com/youtube/v3/search',
@@ -26,17 +25,17 @@ module.exports = (function() {
   }
 
   function video(options) {
-    var id = options.id;
+    var id = options.id || options.videoId
 
     var params = {
       part: 'snippet',
       maxResults:50,
       safeSearch:'none',
+      id:id,
       key: YT_KEY
     };
 
     var qs = _.assign({}, params, options);
-    console.log(qs);
     return rq({
       url: 'https://www.googleapis.com/youtube/v3/videos',
       qs: qs
@@ -118,7 +117,6 @@ module.exports = (function() {
       safeSearch: 'none',
       key: YT_KEY
     }, options)
-
     return rq({
       url: 'https://www.googleapis.com/youtube/v3/playlistItems',
       qs: params

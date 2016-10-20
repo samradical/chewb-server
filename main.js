@@ -39,7 +39,8 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 
 app.use(cors());
 let _port = process.env.PORT || 8080
-var server = app.listen(_port, '127.0.0.1')
+let _host = process.env.SERVER_HOST || '127.0.0.1'
+var server = app.listen(_port, _host)
 
 io = require('./socket')(server);
 
@@ -49,5 +50,6 @@ app.get('/', function(req, res) {
     res.status(200).send('Hello, world SAM!');
 });
 
+console.log(_host, _port);
 
 module.exports = app;

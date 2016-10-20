@@ -8,3 +8,5 @@ src/audio/*
 node_modules
 envvars
 _out
+*.mp4
+*.m4a

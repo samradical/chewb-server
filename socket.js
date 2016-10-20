@@ -1,21 +1,25 @@
-var io = require('socket.io');
-var ip = require('ip');
-var fs = require('fs');
-var path = require('path');
-var stream = require('stream');
-var _ = require('lodash');
-var ffmpeg = require('fluent-ffmpeg');
-//var OSC = require('./osc');
-var RECORDER = require('./recorder');
-//var BIKE_OSC = require('./bike_osc');
-var Emitter = require('./events');
-var tmp = require('tmp');
-var request = require('request');
-var SIDX = require('@samelie/node-youtube-dash-sidx');
-var DASHSAVE = require('@samelie/mp4-dash-record');
-//var UPLOAD = require('@samelie/youtube-uploader');
-var REDIS = require('@samelie/chewb-redis');
-var YT = require('./services/youtube');
+const io = require('socket.io');
+const ip = require('ip');
+const fs = require('fs');
+const uuid = require('uuid');
+const path = require('path');
+const stream = require('stream');
+const _ = require('lodash');
+const ffmpeg = require('fluent-ffmpeg');
+//const OSC = require('./osc');
+const RECORDER = require('./recorder');
+//const BIKE_OSC = require('./bike_osc');
+const Emitter = require('./events');
+const tmp = require('tmp');
+const request = require('request');
+const SIDX = require('@samelie/node-youtube-dash-sidx');
+const DASHSAVE = require('@samelie/mp4-dash-record');
+const UPLOAD = require('@samelie/youtube-uploader');
+const REDIS = require('@samelie/chewb-redis');
+const YT = require('./services/youtube');
+
+const SocketRecord = require('./socket_record');
+const SocketYoutube = require('./socket_youtube');
 
 //UPLOAD.init({ "web": { "client_id": "791164201854-59lj1a5dd75moqgfr4fj63ug604pmq03.apps.googleusercontent.com", "project_id": "samtest-144107", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://accounts.google.com/o/oauth2/token", "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "client_secret": "VjcK9-gpfLnjWJuIXsEsAPUS", "redirect_uris": ["http://localhost:5000/oauth2callback"], "javascript_origins": ["http://localhost:5000"] } }, 'PLuTh1a1eg5vZavHvi60x_7SDq_pm4W4ID')
 
@@ -31,315 +35,129 @@ const emit = (userSocket, key, value) => {
   }
 }
 
-var SOCKET = function(express) {
+const SOCKET = function(express) {
 
   tmp.dir((err, path, cleanupCallback) => {
     if (err) throw err;
+    const TEMP_DIR = path
+    console.log("Dir: ", TEMP_DIR);
+    fs.chmodSync(TEMP_DIR, '0777')
+    SIDX.setTempSaveDir(TEMP_DIR)
 
-    console.log("Dir: ", path);
-    fs.chmodSync(path, '0777')
-    SIDX.setTempSaveDir(path)
+    var users = {};
+    var userMaterials = {}
+    var ids = [];
+    const IO = io.listen(express);
+    IO.on('connection', userConnected);
 
-  });
+    function userConnected(socket) {
+
+      ids.push(socket.id);
+      users[socket.id] = socket;
+
+      userMaterials[socket.id] = {}
+      userMaterials[socket.id].recorder = new SocketRecord(socket, TEMP_DIR)
+      userMaterials[socket.id].youtube = new SocketYoutube(socket)
+      userMaterials[socket.id].youtube.saveDirectory = TEMP_DIR
 
 
-  var users = {};
-  var ids = [];
-  io = io.listen(express);
-  io.on('connection', userConnected);
+      users[socket.id].onQueueVideoSearch = (val) => {
+        Emitter.emitter.emit('video:search', val);
+      }
 
-  function userConnected(socket) {
+      users[socket.id].onRecorderStart = (val) => {
+        RECORDER.start((id) => {
+          emit(users[socket.id], 'recorder:started', id)
+        })
+      }
 
-    ids.push(socket.id);
-    users[socket.id] = socket;
+      users[socket.id].onRecorderImageSave = (image, id) => {
+        console.log("socket.onRecorderImageSave");
+        RECORDER.saveImage(image, id, () => {
+          emit(users[socket.id], 'recorder:image:saved')
+        })
+      }
 
+      users[socket.id].onRecorderVideoSave = (obj, id) => {
+        console.log("socket.onRecorderVideoSave");
+        RECORDER.saveVideo(obj, id, (savePath) => {
+          emit(users[socket.id], 'recorder:video:saved', savePath)
+        })
+      }
 
-    users[socket.id].onQueueVideoSearch = (val) => {
-      Emitter.emitter.emit('video:search', val);
-    }
+      users[socket.id].onVideoUpload = (files) => {
+        UPLOAD.upload(files, 'PLuTh1a1eg5vZavHvi60x_7SDq_pm4W4ID')
+      }
 
-    users[socket.id].onRecorderStart = (val) => {
-      RECORDER.start((id) => {
-        emit(users[socket.id], 'recorder:started', id)
-      })
-    }
-
-    users[socket.id].onRecorderImageSave = (image, id) => {
-      console.log("socket.onRecorderImageSave");
-      RECORDER.saveImage(image, id, () => {
-        emit(users[socket.id], 'recorder:image:saved')
-      })
-    }
-
-    users[socket.id].onRecorderVideoSave = (obj, id) => {
-      console.log("socket.onRecorderVideoSave");
-      RECORDER.saveVideo(obj, id, (savePath) => {
-        emit(users[socket.id], 'recorder:video:saved', savePath)
-      })
-    }
-
-    users[socket.id].onGetVideoSidx = (obj) => {
       /*
-      returns an array on length 1
-      data[0]
+      hmkey/uuid
+      value
       */
+      users[socket.id].onSetRedisIndexRange = (obj) => {
+        REDIS.setIndexRange(obj.uuid, obj.value)
+      }
 
-      /*Get existing manifest*/
-      REDIS.getSidx(obj.uuid)
-        .then(sidx => {
-          if (sidx) {
-            //get the new URL
-            console.log(`Got REDIS sidx manifest for ${obj.uuid}`);
-            SIDX.getURL(sidx.videoId, sidx.itag)
-              .then(url => {
-                sidx.url = url
-                emit(users[socket.id], `rad:youtube:sidx:${obj.uuid}:resp`, sidx)
-              })
-          } else {
-            console.log(`Getting sidx manifest for ${obj.uuid}`);
-            SIDX.start(obj).then((data) => {
-              if (users[socket.id]) {
-                let manifestData = data
-                REDIS.setSidx(obj.uuid, manifestData)
-                console.log(`Set REDIS sidx manifest for ${obj.uuid}`);
-                emit(users[socket.id], `rad:youtube:sidx:${obj.uuid}:resp`, manifestData)
-              }
-            }).catch((e) => {
-              console.log(`Error on getting sidx ${obj.uuid}`);
-              if (users[socket.id]) {
-                emit(users[socket.id], `rad:youtube:sidx:${obj.uuid}:resp`,
-                  generateError(`Failed to get sidx for ${obj.uuid}`, {
-                    videoId: obj.id
-                  })
-                )
-              }
-            });
-          }
+
+
+      socket.on('queue:video:search', users[socket.id].onQueueVideoSearch)
+        /*socket.on('recorder:start', users[socket.id].onRecorderStart)
+        socket.on('recorder:image:save', users[socket.id].onRecorderImageSave)
+        socket.on('recorder:video:save', users[socket.id].onRecorderVideoSave)*/
+
+      /*socket.on('rad:youtube:sidx', users[socket.id].onGetVideoSidx)
+      socket.on('rad:youtube:playlist:items', users[socket.id].onGetYoutubePlaylistItems)
+      socket.on('rad:youtube:search', users[socket.id].onYoutubeSearch)*/
+
+      socket.on('rad:redis:set:indexRange', users[socket.id].onSetRedisIndexRange)
+
+      //socket.on('rad:video:range', users[socket.id].onRadVideo)
+      //socket.on('rad:video:save', users[socket.id].onAddVideo)
+      //socket.on('rad:video:save:end', users[socket.id].onSaveVideo)
+
+      //socket.on('rad:video:frame', users[socket.id].onAddFrame)
+      //socket.on('rad:video:frame:end', users[socket.id].onAddFrameEnd)
+      /*socket.on('rad:recorder:audio', users[socket.id].onAddAuio)
+      socket.on('rad:recorder:frame', users[socket.id].onAddFrame)
+      socket.on('rad:recorder:frame:save', users[socket.id].onAddFrameEnd)
+      socket.on('rad:recorder:save', users[socket.id].onAddFrameEndSave)*/
+
+      socket.on('rad:video:upload', users[socket.id].onVideoUpload)
+
+
+      //*********
+      //*********
+
+      users[socket.id].onDisconnect = () => {
+        _.forIn(users[socket.id]._events, (func, key) => {
+          socket.removeListener(key, func)
         })
-    }
-
-    function _requestYoutubePlaylistItems(obj) {
-      return YT.playlistItems(obj).then(function(data) {
-        return JSON.parse(data.body)
-      });
-    }
-
-    users[socket.id].onGetYoutubePlaylistItems = (obj) => {
-      let { playlistId } = obj
-
-      if (obj.force) {
-        _requestYoutubePlaylistItems(obj)
-          .then(playlistItems => {
-            REDIS.setYoutubePlaylistItems(playlistId, playlistItems).finally()
-            emit(users[socket.id], `rad:youtube:playlist:items:resp`, playlistItems)
-          })
-      } else {
-        REDIS.getPlaylistItems(playlistId)
-          .then((items) => {
-            console.log(`Got REDIS playlistItems ${playlistId}`);
-            let _playlistItems = { items: items }
-            emit(users[socket.id], `rad:youtube:playlist:items:resp`, _playlistItems)
-          })
-          .catch(err => {
-            console.log(err.message);
-            console.log('Requesting');
-            _requestYoutubePlaylistItems(obj)
-              .then(playlistItems => {
-                REDIS.setYoutubePlaylistItems(playlistId, playlistItems).finally()
-                emit(users[socket.id], `rad:youtube:playlist:items:resp`, playlistItems)
-              })
-          })
-      }
-    }
-
-    /*
-    NOT SAVING THE INDEX BUFFER, always false
-    */
-    var indexBuffer, rangeBuffer
-    users[socket.id].onRadVideo = (obj) => {
-      var url = obj.url
-      var _o = {
-        url: url,
-      }
-      if (obj.youtubeDl) {
-        _o.headers = {
-          "Range": "bytes=" + obj.range,
-          "User-Agent": USER_AGENT
-        }
-      } else {
-        _o.url += '&range=' + obj.range;
-      }
-
-      var _indexBuffer, _rangeBuffer
-      console.log(`Requesting range ${obj.range} : isIndexRange ${obj.isIndexRange}`);
-      var r = request(_o)
-
-      r.on('data', (chunk) => {
-
-        if (users[socket.id]) {
-            //GOOOD BUT SLOW
-          /*if (obj.isIndexRange) {
-            DASHSAVE.addIndex(chunk, obj.uuid)
-          } else {
-            DASHSAVE.addRange(chunk, obj.uuid)
-          }*/
-          emit(users[socket.id], `rad:video:range:${obj.uuid}:resp`, chunk)
-        }
-      });
-
-      r.on('end', () => {
-        if (users[socket.id]) {
-          console.log(`Finished range request ${obj.end} ${obj.duration}`);
-          emit(users[socket.id], `rad:video:range:${obj.uuid}:end`)
-          if (!obj.isIndexRange && obj.end) {
-            /*let _l = indexBuffer.length + rangeBuffer.length
-            let _b = Buffer.concat([indexBuffer, rangeBuffer], _l)*/
-            //indexBuffer.fill(0)
-            //rangeBuffer.fill(0)
-
-
-            //GOOOD BUT SLOW
-            /*DASHSAVE.save(
-                path.join(__dirname, '_out'),
-                obj.uuid, {
-                  duration: obj.duration
-                }
-              ).then(path => {
-                console.log(path);
-                io.emit('play-video', {
-                  path: path,
-                  intData: 5,
-                  floatData: 0.5,
-                  boolData: true
-                })
-              })*/
-
-
-              /*REDIS.setIndexRange(obj.uuid, indexBuffer)
-              indexBuffer.fill(0)
-              indexBuffer = null*/
-          } else if (obj.isIndexRange) {
-            /*DASHSAVE.addIndex(
-              new Buffer(indexBuffer)
-            )*/
-          }
-        }
-      });
-    }
-
-    users[socket.id].onAddVideo = (obj) => {
-      DASHSAVE.add(__dirname + '/_out',
-          obj)
-        /*let buffer1 = obj.indexBuffer
-        let buffer2 = obj.buffer
-        var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
-        tmp.set(new Uint8Array(buffer1), 0);
-        tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
-        let _b = toBuffer(tmp)
-        var s = new stream.Readable();
-        s.push(_b);
-        s.push(null);
-        var command = ffmpeg(s)
-            .output(`outputfile${Math.random()}.mp4`)
-            .toFormat('mp4')
-            .on('start', function(commandLine) {
-                console.log('Spawned Ffmpeg with command: ' + commandLine);
-            })
-            .on('stderr', function(stderrLine) {
-                console.log('Stderr output: ' + stderrLine);
-            })
-            .on('error', function(err, stdout, stderr) {
-                console.log('Cannot process video: ' + err.message);
-                console.log(stdout);
-                console.log(stderr);
-            })
-            .on('end', function() {
-                console.log('Finished processing');
-            })
-            .run();*/
-    }
-
-    users[socket.id].onAddFrame = (frame) => {
-      DASHSAVE.addFrame(__dirname + '/_out', frame)
-    }
-
-    users[socket.id].onAddFrameEnd = (frame) => {
-      DASHSAVE.addFrame(__dirname + '/_out', frame, true)
-    }
-
-    users[socket.id].onSaveVideo = () => {
-      DASHSAVE.save(__dirname + '/_out')
-        .then(response => {
-          console.log(response);
-          emit(users[socket.id], 'rad:video:save:success', response)
+        let _i = ids.indexOf(socket.id)
+        ids.splice(_i, 1)
+        _.forIn(userMaterials[socket.id], (instance, key) => {
+          instance.destroy()
+          instance = null
         })
+        users[socket.id] = null
+        delete users[socket.id]
+        console.log(`Disconnected ${socket.id}`);
+      }
+
+      socket.once('disconnect', users[socket.id].onDisconnect)
+
+      socket.emit('handshake', {
+        index: ids.length - 1,
+        id: socket.id,
+        ip: ip.address()
+      });
+
+      console.log("Connection: ", socket.id, 'at: ', ip.address());
     }
 
-    users[socket.id].onVideoUpload = (files) => {
-      UPLOAD.upload(files, 'PLuTh1a1eg5vZavHvi60x_7SDq_pm4W4ID')
-    }
 
-    /*
-    hmkey/uuid
-    value
-    */
-    users[socket.id].onSetRedisIndexRange = (obj) => {
-      REDIS.setIndexRange(obj.uuid, obj.value)
-    }
-
-
-
-    socket.on('queue:video:search', users[socket.id].onQueueVideoSearch)
-    socket.on('recorder:start', users[socket.id].onRecorderStart)
-    socket.on('recorder:image:save', users[socket.id].onRecorderImageSave)
-    socket.on('recorder:video:save', users[socket.id].onRecorderVideoSave)
-
-    socket.on('rad:youtube:sidx', users[socket.id].onGetVideoSidx)
-    socket.on('rad:youtube:playlist:items', users[socket.id].onGetYoutubePlaylistItems)
-
-    socket.on('rad:redis:set:indexRange', users[socket.id].onSetRedisIndexRange)
-
-    socket.on('rad:video:range', users[socket.id].onRadVideo)
-    socket.on('rad:video:save', users[socket.id].onAddVideo)
-    socket.on('rad:video:save:end', users[socket.id].onSaveVideo)
-
-    socket.on('rad:video:frame', users[socket.id].onAddFrame)
-    socket.on('rad:video:frame:end', users[socket.id].onAddFrameEnd)
-
-    socket.on('rad:video:upload', users[socket.id].onVideoUpload)
-
-
-    //*********
-    //*********
-
-    users[socket.id].onDisconnect = () => {
-      _.forIn(users[socket.id]._events, (func, key) => {
-        socket.removeListener(key, func)
-      })
-      let _i = ids.indexOf(socket.id)
-      ids.splice(_i, 1)
-      console.log(users[socket.id]._callbacks);
-      users[socket.id] = null
-      delete users[socket.id]
-      console.log("Disocnnected");
-    }
-
-    socket.once('disconnect', users[socket.id].onDisconnect)
-
-    socket.emit('handshake', {
-      index: ids.length - 1,
-      id: socket.id,
-      ip: ip.address()
-    });
-
-    console.log("Connection: ", socket.id, 'at: ', ip.address());
-  }
-
-
-  console.log("Sockets listening");
-  /*var osc = new OSC(io);
-  var bike_osc = new BIKE_OSC(io);*/
-
+    console.log("Sockets listening");
+    /*var osc = new OSC(io);
+    var bike_osc = new BIKE_OSC(io);*/
+  });
 };
 
 module.exports = SOCKET;
