@@ -8,7 +8,11 @@
     "build": "browserify main.js > chewb.js --bare"
   },
   "dependencies": {
-    "@samelie/node-youtube-dash-sidx": "^0.1.7",
+    "@samelie/node-youtube-dash-sidx": "git://github.com/samradical/node-youtube-dash-sidx.git",
+    "@samelie/mp4-dash-record": "git://github.com/samradical/mp4-dash-record.git",
+    "@samelie/youtube-uploader": "git://github.com/samradical/youtube-uploader.git",
+    "@samelie/chewb-redis": "git://github.com/samradical/chewb-redis.git",
+    "@samelie/google-cloudstorage": "git://github.com/samradical/google-cloudstorage.git",
     "bcrypt-nodejs": "latest",
     "bluebird": "^3.2.1",
     "body-parser": "~1.0.0",
@@ -22,6 +26,7 @@
     "fluent-ffmpeg": "^2.1.0",
     "ip": "1.0.1",
     "lodash": "^4.0.0",
+    "memwatch-next": "^0.3.0",
     "method-override": "~1.0.0",
     "morgan": "~1.0.0",
     "multiparty": "^4.1.0",

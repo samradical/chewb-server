@@ -57,6 +57,7 @@ const SOCKET = function(express) {
 
       userMaterials[socket.id] = {}
       userMaterials[socket.id].recorder = new SocketRecord(socket, TEMP_DIR)
+      userMaterials[socket.id].recorder.saveDirectory = TEMP_DIR
       userMaterials[socket.id].youtube = new SocketYoutube(socket)
       userMaterials[socket.id].youtube.saveDirectory = TEMP_DIR
 

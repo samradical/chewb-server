@@ -1,5 +1,10 @@
 const DASHSAVE = require('@samelie/mp4-dash-record');
 const GOOGLE = require('./services/gcloud');
+const uuid = require('uuid');
+const path = require('path');
+const fs = require('fs');
+const rimraf = require('rimraf');
+
 
 class UserRecordSocket {
   constructor(socket) {
@@ -30,11 +35,17 @@ class UserRecordSocket {
       console.log("No save options socket record onSave()");
       return
     }
-    options.saveDir = this.saveDirectory
+    let _saveDir = path.join(this.saveDirectory, uuid.v1())
+    fs.mkdirSync(_saveDir)
+    options.saveDir = _saveDir
     return this._recorder.save(options)
-      .then(path => {
-        return GOOGLE.store(path)
+      .then(final => {
+        return GOOGLE.store(final)
           .then(uploadedPath=>{
+            console.log(uploadedPath);
+            rimraf(_saveDir, (err,d)=>{
+
+            })
             this.socket.emit('rad:recorder:save:success', uploadedPath)
           })
       }).finally()
