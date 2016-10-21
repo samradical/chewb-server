@@ -1,0 +1,5 @@
+{
+  "GCLOUD_PROJECT": "samrad-1337",
+  "CLOUD_BUCKET": "gs://samrad-chewb",
+  "DATA_BACKEND": "datastore"
+}
