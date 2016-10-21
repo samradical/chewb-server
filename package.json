@@ -1,8 +1,7 @@
 {
   "name": "@samelie/chewb",
   "version": "0.1.0",
-  "main": "entry.js",
-  "private": true,
+  "main": "main.js",
   "scripts": {
     "start": "node main.js",
     "build": "browserify main.js > chewb.js --bare"
