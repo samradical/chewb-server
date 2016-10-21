@@ -3,9 +3,9 @@ var request = require('request');
 var SIDX = require('@samelie/node-youtube-dash-sidx');
 var DASHSAVE = require('@samelie/mp4-dash-record');
 var REDIS = require('@samelie/chewb-redis');
-var YT = require('./services/youtube');
+var YT = require('../services/youtube');
 
-const {emit, USER_AGENT, generateError} = require('./socket_utils')
+const { emit, USER_AGENT, generateError } = require('./socket_utils')
 
 class UserSocketYotube {
   constructor(socket) {
@@ -78,7 +78,7 @@ class UserSocketYotube {
   }
 
   _requestYoutubePlaylistItems(obj) {
-    return YT.playlistItems(obj).then((data)=> {
+    return YT.playlistItems(obj).then((data) => {
       return JSON.parse(data.body)
     });
   }
@@ -112,13 +112,13 @@ class UserSocketYotube {
   }
 
   onYoutubeSearch(obj) {
-    return YT.search(obj).then((data)=> {
+    return YT.search(obj).then((data) => {
       emit(this.socket, `rad:youtube:search:resp`, JSON.parse(data.body))
     }).finally();
   }
 
   onYoutubeVideo(obj) {
-    return YT.video(obj).then((data)=> {
+    return YT.video(obj).then((data) => {
       emit(this.socket, `rad:youtube:video:resp`, JSON.parse(data.body))
     }).finally();
   }
@@ -154,6 +154,10 @@ class UserSocketYotube {
       }
     });
 
+    r.on('error', (err)=> {
+        emit(this.socket, `rad:youtube:range:${obj.uuid}:resp`, new Error('Server reset'))
+    });
+
     r.on('end', () => {
       if (this.socket) {
         console.log(`Finished range request ${obj.end} ${obj.duration}`);
@@ -162,10 +166,8 @@ class UserSocketYotube {
     });
   }
 
-  destroy() {
-  }
+  destroy() {}
 
 }
 
 module.exports = UserSocketYotube;
-

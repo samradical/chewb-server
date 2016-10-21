@@ -6,7 +6,7 @@ var fs = require('fs');
 var path = require('path');
 var multiparty = require('multiparty');
 var Q = require('bluebird');
-var Emitter = require('../events');
+var Emitter = require('../utils/events');
 var xray = require('x-ray');
 
 var trendingTodayPlaylist = "PLbpi6ZahtOH7h9OULR1AVb4i8zo0ctwEr";

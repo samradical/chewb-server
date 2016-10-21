@@ -14,9 +14,7 @@ var session = require('express-session');
 let _env = path.join(__dirname, 'envvars')
 require('dotenv').config({ path: _env });
 
-require('./passport')(passport);
-
-var memwatch = require('memwatch-next');
+require('./auth/passport')(passport);
 
 var server;
 var app = express();
@@ -41,18 +39,13 @@ let _port = process.env.PORT || 8080
 let _host = process.env.SERVER_HOST || '127.0.0.1'
 var server = app.listen(_port, _host)
 
-io = require('./socket')(server);
+io = require('./sockets/socket')(server);
 
 routes = require('./routes')(app, io);
 
 app.get('/', function(req, res) {
-    res.status(200).send('Hello, world SAM!');
+    res.status(200).send('nothing to see here...');
 });
-
-memwatch.on('leak', (info) =>{
-  console.log("------LEAK-------");
-  console.log(info);
- });
 
 module.exports = app;
 

@@ -1,5 +1,5 @@
 const DASHSAVE = require('@samelie/mp4-dash-record');
-const GOOGLE = require('./services/gcloud');
+const GOOGLE = require('../services/gcloud');
 const uuid = require('uuid');
 const path = require('path');
 const fs = require('fs');
