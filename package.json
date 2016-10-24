@@ -7,10 +7,10 @@
     "build": "browserify main.js > chewb.js --bare"
   },
   "dependencies": {
-    "@samelie/node-youtube-dash-sidx": "*",
-    "@samelie/mp4-dash-record": "*",
     "@samelie/chewb-redis": "*",
     "@samelie/google-cloudstorage": "*",
+    "@samelie/mp4-dash-record": "*",
+    "@samelie/node-youtube-dash-sidx": "*",
     "bcrypt-nodejs": "latest",
     "bluebird": "^3.2.1",
     "body-parser": "~1.0.0",

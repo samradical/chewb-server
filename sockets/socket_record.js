@@ -9,12 +9,12 @@ const rimraf = require('rimraf');
 class UserRecordSocket {
   constructor(socket) {
     this.socket = socket
-    socket.onAddAudio = this.onAddAudio.bind(this)
-    socket.onAddFrame = this.onAddFrame.bind(this)
-    socket.onSave = this.onSave.bind(this)
-    socket.on('rad:recorder:audio', socket.onAddAudio)
-    socket.on('rad:recorder:frame', socket.onAddFrame)
-    socket.on('rad:recorder:save', socket.onSave)
+    this.onAddAudio = this.onAddAudio.bind(this)
+    this.onAddFrame = this.onAddFrame.bind(this)
+    this.onSave = this.onSave.bind(this)
+    socket.on('rad:recorder:audio', this.onAddAudio)
+    socket.on('rad:recorder:frame', this.onAddFrame)
+    socket.on('rad:recorder:save', this.onSave)
     this._recorder = new DASHSAVE()
   }
 

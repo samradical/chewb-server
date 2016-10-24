@@ -38,7 +38,7 @@ app.use(cors());
 let _port = process.env.PORT || 8080
 let _host = process.env.SERVER_HOST || '127.0.0.1'
 console.log(_host, _port);
-var server = app.listen(_port, _host)
+var server = app.listen(_port)
 
 io = require('./sockets/socket')(server);
 

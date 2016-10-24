@@ -10,16 +10,16 @@ const { emit, USER_AGENT, generateError } = require('./socket_utils')
 class UserSocketYotube {
   constructor(socket) {
     this.socket = socket
-    socket.onGetVideoSidx = this.onGetVideoSidx.bind(this)
-    socket.onGetYoutubePlaylistItems = this.onGetYoutubePlaylistItems.bind(this)
-    socket.onYoutubeSearch = this.onYoutubeSearch.bind(this)
-    socket.onYoutubeVideo = this.onYoutubeVideo.bind(this)
-    socket.onRange = this.onRange.bind(this)
-    socket.on('rad:youtube:sidx', socket.onGetVideoSidx)
-    socket.on('rad:youtube:playlist:items', socket.onGetYoutubePlaylistItems)
-    socket.on('rad:youtube:search', socket.onYoutubeSearch)
-    socket.on('rad:youtube:video', socket.onYoutubeVideo)
-    socket.on('rad:youtube:range', socket.onRange)
+    this.onGetVideoSidx = this.onGetVideoSidx.bind(this)
+    this.onGetYoutubePlaylistItems = this.onGetYoutubePlaylistItems.bind(this)
+    this.onYoutubeSearch = this.onYoutubeSearch.bind(this)
+    this.onYoutubeVideo = this.onYoutubeVideo.bind(this)
+    this.onRange = this.onRange.bind(this)
+    socket.on('rad:youtube:sidx', this.onGetVideoSidx)
+    socket.on('rad:youtube:playlist:items', this.onGetYoutubePlaylistItems)
+    socket.on('rad:youtube:search', this.onYoutubeSearch)
+    socket.on('rad:youtube:video', this.onYoutubeVideo)
+    socket.on('rad:youtube:range', this.onRange)
   }
 
   onGetVideoSidx(obj) {
@@ -35,7 +35,7 @@ class UserSocketYotube {
         let _hasItag = false
         if (sidx) {
           if (sidx.itag !== 'null') {
-            _hasItag = true
+            //_hasItag = true
           }
         }
 
@@ -63,7 +63,7 @@ class UserSocketYotube {
                   REDIS.setSidx(obj.uuid, manifestData)
                 }
               }).catch((e) => {
-                console.log(`Error on getting sidx ${obj.uuid}`);
+                console.log(`Error on getting sidx ${obj.uuid}`, e.toString());
                 if (this.socket) {
                   emit(this.socket, `rad:youtube:sidx:${obj.uuid}:resp`,
                     generateError(`Failed to get sidx for ${obj.uuid}`, {
@@ -127,6 +127,9 @@ class UserSocketYotube {
     var url = obj.url
     var _o = {
       url: url,
+      headers:{
+        'User-Agent':USER_AGENT
+      }
     }
     if (obj.youtubeDl) {
       _o.headers = {
