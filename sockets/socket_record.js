@@ -4,18 +4,25 @@ const uuid = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
-
+const REDIS = require('./redis');
 
 class UserRecordSocket {
-  constructor(socket) {
+  constructor(socket, tmpDir) {
     this.socket = socket
+    this.saveDirectory = tmpDir
     this.onAddAudio = this.onAddAudio.bind(this)
     this.onAddFrame = this.onAddFrame.bind(this)
     this.onSave = this.onSave.bind(this)
     socket.on('rad:recorder:audio', this.onAddAudio)
     socket.on('rad:recorder:frame', this.onAddFrame)
+    socket.on('rad:recorder:buffer', this.onAddBuffer)
     socket.on('rad:recorder:save', this.onSave)
+    this._saveHash = uuid.v4()
+    this.saveDirectory = path.join(this.saveDirectory, this._saveHash)
+    fs.mkdirSync(this.saveDirectory)
     this._recorder = new DASHSAVE()
+    this._recorder.saveDirectory = this.saveDirectory
+    console.log(this.saveDirectory);
   }
 
   onAddAudio(buffer) {
@@ -24,38 +31,45 @@ class UserRecordSocket {
     this.socket.emit('rad:recorder:audio:success')
   }
 
-  onAddFrame(buffer) {
+  onAddFrame(base64Str) {
+    console.log('video', base64Str.length);
+    this._recorder.saveImage(base64Str)
+    .then(()=>{
+      this.socket.emit('rad:recorder:frame:success')
+    })
+  }
+
+  onAddBuffer(buffer) {
     console.log('video', buffer.length);
     this._recorder.addFrame(buffer)
     this.socket.emit('rad:recorder:frame:success')
   }
 
   onSave(options) {
-    if(!options){
+    if (!options) {
       console.log("No save options socket record onSave()");
       return
     }
-    let _saveDir = path.join(this.saveDirectory, uuid.v1())
-    fs.mkdirSync(_saveDir)
-    options.saveDir = _saveDir
     return this._recorder.save(options)
       .then(final => {
         return GOOGLE.store(final)
-          .then(uploadedPath=>{
-            console.log(uploadedPath);
-            rimraf(_saveDir, (err,d)=>{
+          .then(uploadedPath => {
 
+            REDIS.hset(`${process.env.REDIS_PROJECT}:saves:google`, this._saveHash, uploadedPath)
+
+            this.socket.emit('rad:recorder:save:success', {
+              url: uploadedPath,
+              local: final
             })
-            this.socket.emit('rad:recorder:save:success', uploadedPath)
           })
       }).finally()
   }
 
-  set saveDirectory(d){
+  set saveDirectory(d) {
     this._saveDirectory = d
   }
 
-  get saveDirectory(){
+  get saveDirectory() {
     return this._saveDirectory || __dirname
   }
 

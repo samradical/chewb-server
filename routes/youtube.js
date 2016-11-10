@@ -15,7 +15,7 @@ var SIDX = require('@samelie/node-youtube-dash-sidx');
 
 var CHANNEL_UPLOADS = 'https://www.youtube.com/channel/';
 
-module.exports = function(express, io) {
+module.exports = function(router, io) {
   var spotifyAuthResponse;
   var x = new xray();
 
@@ -46,19 +46,19 @@ module.exports = function(express, io) {
   });
 
 
-  express.get('/youtube/search', function(req, res) {
+  router.get('/youtube/search', function(req, res) {
     YT.search(req.query.q).then(function(data) {
       res.send(data);
     });
   });
 
-  express.get('/youtube/playlistitems', function(req, res) {
+  router.get('/youtube/playlistitems', function(req, res) {
     YT.playlistItems(req.query).then(function(data) {
       res.send(JSON.parse(data.body));
     });
   });
 
-  express.get('/youtube/video/related', function(req, res) {
+  router.get('/youtube/video/related', function(req, res) {
     console.log("-----------------------")
     console.log(nextYoutubeQuery.length)
     console.log("-----------------------")
@@ -74,7 +74,7 @@ module.exports = function(express, io) {
     }
   });
 
-  express.get('/getNextVideo', function(req, res) {
+  router.get('/getNextVideo', function(req, res) {
     console.log("-----------------------")
     console.log(nextYoutubeQuery.length)
     console.log("Using this id:", req.query.id)
@@ -97,7 +97,7 @@ module.exports = function(express, io) {
     }
   });
 
-  express.get('/channelUploads', function(req, res) {
+  router.get('/channelUploads', function(req, res) {
     var url = CHANNEL_UPLOADS + req.query.channelId + '/videos?sort=dd&view=0&shelf_id=0';
     //if the content text contains 'by' then it is a liked video
     console.log(url);
@@ -106,7 +106,7 @@ module.exports = function(express, io) {
     });
   });
 
-  express.get('/getNextVideoFromPlaylist', function(req, res) {
+  router.get('/getNextVideoFromPlaylist', function(req, res) {
     console.log("----------------------- getNextVideoFromPlaylist")
     console.log(nextYoutubeQuery.length)
     console.log("Using this id:", req.query.videoId)
@@ -133,7 +133,7 @@ module.exports = function(express, io) {
     }
   });
 
-  express.get('/getVideoSidx', function(req, res) {
+  router.get('/getVideoSidx', function(req, res) {
     SIDX.start(req.query).then(function(data) {
       res.send(data);
     }).catch(function(e) {
@@ -144,7 +144,7 @@ module.exports = function(express, io) {
     });
   });
 
-  express.post('/getVideo', function(req, res) {
+  router.post('/getVideo', function(req, res) {
     var form = new multiparty.Form();
     form.parse(req, function(err, data, files) {
       var url = data.url + '&range=' + data.byteRange;
@@ -168,7 +168,7 @@ module.exports = function(express, io) {
     });
   });
 
-  express.post('/getVideoIndex', function(req, res) {
+  router.post('/getVideoIndex', function(req, res) {
     var form = new multiparty.Form();
     form.parse(req, function(err, data, files) {
       var url = data.url + '&range=' + data.indexRange;

@@ -1,14 +1,15 @@
-var tmp = require('tmp');
-var request = require('request');
-var SIDX = require('@samelie/node-youtube-dash-sidx');
-var DASHSAVE = require('@samelie/mp4-dash-record');
-var REDIS = require('@samelie/chewb-redis');
-var YT = require('../services/youtube');
+const tmp = require('tmp');
+const request = require('request');
+const SIDX = require('@samelie/node-youtube-dash-sidx');
+const DASHSAVE = require('@samelie/mp4-dash-record');
+const REDIS = require('./redis');
+const YT = require('../services/youtube');
 
 const { emit, USER_AGENT, generateError } = require('./socket_utils')
 
 class UserSocketYotube {
-  constructor(socket) {
+  constructor(router, socket) {
+    //express routing
     this.socket = socket
     this.onGetVideoSidx = this.onGetVideoSidx.bind(this)
     this.onGetYoutubePlaylistItems = this.onGetYoutubePlaylistItems.bind(this)
@@ -20,6 +21,7 @@ class UserSocketYotube {
     socket.on('rad:youtube:search', this.onYoutubeSearch)
     socket.on('rad:youtube:video', this.onYoutubeVideo)
     socket.on('rad:youtube:range', this.onRange)
+    console.log('UserSocketYotube');
   }
 
   onGetVideoSidx(obj) {
@@ -35,7 +37,7 @@ class UserSocketYotube {
         let _hasItag = false
         if (sidx) {
           if (sidx.itag !== 'null') {
-            //_hasItag = true
+            _hasItag = true
           }
         }
 
@@ -50,31 +52,42 @@ class UserSocketYotube {
         } else {
           REDIS.del(obj.uuid).then(() => {
             console.log(`Getting sidx manifest for ${obj.uuid}`);
-            SIDX.start(obj)
-              .then((data) => {
-                if (this.socket) {
-                  let manifestData = data
-                  if (!manifestData) {
-                    throw new Error(`No manifest data ${obj.uuid}`)
-                    return
-                  }
-                  console.log(`Set REDIS sidx manifest for ${obj.uuid}`);
-                  emit(this.socket, `rad:youtube:sidx:${obj.uuid}:resp`, manifestData)
-                  REDIS.setSidx(obj.uuid, manifestData)
-                }
-              }).catch((e) => {
-                console.log(`Error on getting sidx ${obj.uuid}`, e.toString());
-                if (this.socket) {
-                  emit(this.socket, `rad:youtube:sidx:${obj.uuid}:resp`,
-                    generateError(`Failed to get sidx for ${obj.uuid}`, {
-                      videoId: obj.id
-                    })
-                  )
-                }
-              });
+            this._requestSidxAndAdd(obj)
           })
         }
       })
+      //no SIDX in REDIS
+      .catch(err => {
+        console.log(`Getting sidx manifest for ${obj.uuid}`);
+        this._requestSidxAndAdd(obj)
+      })
+  }
+
+  _requestSidxAndAdd(obj) {
+    return SIDX.start(obj)
+      .then((data) => {
+        if (this.socket) {
+          let manifestData = data
+          if (!manifestData) {
+            throw new Error(`No manifest data ${obj.uuid}`)
+            return
+          }
+          console.log(`Set REDIS sidx manifest for ${obj.uuid}`);
+          emit(this.socket, `rad:youtube:sidx:${obj.uuid}:resp`, manifestData)
+          console.log('REDIS.setSidx(');
+          REDIS.setSidx(obj.uuid, manifestData)
+        }
+      })
+      .catch((e) => {
+        console.log(`Error on getting sidx ${obj.uuid}`, e.toString());
+        if (this.socket) {
+          emit(this.socket, `rad:youtube:sidx:${obj.uuid}:resp`,
+            generateError(`Failed to get sidx for ${obj.uuid}`, {
+              videoId: obj.id
+            })
+          )
+        }
+      });
   }
 
   _requestYoutubePlaylistItems(obj) {
@@ -89,10 +102,12 @@ class UserSocketYotube {
     if (obj.force) {
       this._requestYoutubePlaylistItems(obj)
         .then(playlistItems => {
+          console.log('REDIS.setYoutubePlaylistItems');
           REDIS.setYoutubePlaylistItems(playlistId, playlistItems).finally()
           emit(this.socket, _response, playlistItems)
         })
     } else {
+      console.log('REDIS.getPlaylistItems(playlistId)');
       REDIS.getPlaylistItems(playlistId)
         .then((items) => {
           console.log(`Got REDIS playlistItems ${playlistId}`);
@@ -104,6 +119,7 @@ class UserSocketYotube {
           console.log('Requesting');
           this._requestYoutubePlaylistItems(obj)
             .then(playlistItems => {
+              console.log('REDIS.setYoutubePlaylistItems');
               REDIS.setYoutubePlaylistItems(playlistId, playlistItems).finally()
               emit(this.socket, _response, playlistItems)
             })
@@ -127,8 +143,8 @@ class UserSocketYotube {
     var url = obj.url
     var _o = {
       url: url,
-      headers:{
-        'User-Agent':USER_AGENT
+      headers: {
+        'User-Agent': USER_AGENT
       }
     }
     if (obj.youtubeDl) {
@@ -157,8 +173,8 @@ class UserSocketYotube {
       }
     });
 
-    r.on('error', (err)=> {
-        emit(this.socket, `rad:youtube:range:${obj.uuid}:resp`, new Error('Server reset'))
+    r.on('error', (err) => {
+      emit(this.socket, `rad:youtube:range:${obj.uuid}:resp`, new Error('Server reset'))
     });
 
     r.on('end', () => {

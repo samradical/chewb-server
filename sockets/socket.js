@@ -24,7 +24,7 @@ const emit = (userSocket, key, value) => {
   }
 }
 
-const SOCKET = function(express) {
+const SOCKET = function(router, express) {
 
   tmp.dir((err, path, cleanupCallback) => {
     if (err) throw err;
@@ -47,7 +47,7 @@ const SOCKET = function(express) {
       userMaterials[socket.id] = {}
       userMaterials[socket.id].recorder = new SocketRecord(socket, TEMP_DIR)
       userMaterials[socket.id].recorder.saveDirectory = TEMP_DIR
-      userMaterials[socket.id].youtube = new SocketYoutube(socket)
+      userMaterials[socket.id].youtube = new SocketYoutube(router, socket)
       userMaterials[socket.id].youtube.saveDirectory = TEMP_DIR
 
       //*********
@@ -80,7 +80,7 @@ const SOCKET = function(express) {
     }
 
 
-    console.log("Sockets listening");
+    console.log("Sockets listening ");
   });
 };
 

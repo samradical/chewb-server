@@ -11,19 +11,18 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 
-var ROUTES = function(exp, _Io) {
-	var express = exp;
+var ROUTES = function(router, _Io) {
 
 	//auth
-	require('./routes/authentication')(express, _Io);
-	require('./routes/echonest')(express, _Io);
-	require('./routes/youtube')(express, _Io);
+	require('./routes/authentication')(router, _Io);
+	require('./routes/echonest')(router, _Io);
+	require('./routes/youtube')(router, _Io);
 
 	//*********************
 	//POST
 	//*********************
 
-	express.post('/signup', function(req, res, next) {
+	router.post('/signup', function(req, res, next) {
 		passport.authenticate('local-signup', function(err, user, info) {
 			if (err) {
 				return next(err); // will generate a 500 error
@@ -41,7 +40,7 @@ var ROUTES = function(exp, _Io) {
 		})(req, res, next);
 	});
 
-	express.post('/login', function(req, res, next) {
+	router.post('/login', function(req, res, next) {
 		passport.authenticate('local-login', function(err, user, info) {
 			if (err) {
 				return next(err); // will generate a 500 error

@@ -4,9 +4,9 @@ var fs = require('fs');
 var path = require('path');
 
 var BASE = 'http://developer.echonest.com/api/v4/track/profile';
-module.exports = function(express) {
+module.exports = function(router) {
 
-  express.post('/echonest/search', function(req, res) {
+  router.post('/echonest/search', function(req, res) {
     request({
       url: BASE,
       qs: {

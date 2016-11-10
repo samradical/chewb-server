@@ -6,7 +6,7 @@ var fs = require('fs');
 var path = require('path');
 var querystring = require('querystring');
 
-var ROUTES = function(express, _Io) {
+var ROUTES = function(router, _Io) {
   var spotifyAuthResponse;
 
 
@@ -18,10 +18,10 @@ var ROUTES = function(express, _Io) {
   /*-------------------*/
   //YOUTUBE
   /*-------------------*/
-  express.get('/auth/youtube', passport.authenticate('youtube'),
+  router.get('/auth/youtube', passport.authenticate('youtube'),
     function(req, res) {});
 
-  express.get('/auth/youtube/callback', function(req, res) {
+  router.get('/auth/youtube/callback', function(req, res) {
 
     console.log("----------------------------------------");
     console.log(req.query);
@@ -53,14 +53,14 @@ var ROUTES = function(express, _Io) {
 //SPOTIFY
 /*-------------------*/
 
-express.get('/auth/spotify',
+router.get('/auth/spotify',
   passport.authenticate('spotify'),
   function(req, res) {
     // The request will be redirected to spotify for authentication, so this
     // function will not be called.
   });
 
-express.get('/auth/spotify/callback', function(req, res) {
+router.get('/auth/spotify/callback', function(req, res) {
   console.log(req.query);
   var code = req.query.code;
   var encodedSecret = new Buffer(process.env.SPOTIFY_CLIENT_ID + ":" + process.env.SPOTIFY_CLIENT_SECRET).toString("base64");
