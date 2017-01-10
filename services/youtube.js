@@ -18,6 +18,8 @@ module.exports = (function() {
       key: YT_KEY
     },obj);
 
+    console.log(params);
+
     return rq({
       url: 'https://www.googleapis.com/youtube/v3/search',
       qs: params

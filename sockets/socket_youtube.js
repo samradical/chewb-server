@@ -29,11 +29,14 @@ class UserSocketYotube {
     returns an array on length 1
     data[0]
     */
-    console.log('Get SIDX with');
+    console.log("chewb socket_youtube, onGetVideoSidx() SIDX with");
     console.log(obj);
     /*Get existing manifest*/
-    REDIS.getSidx(obj.uuid)
+    REDIS.youtube.getSidx(obj.uuid)
       .then(sidx => {
+        console.log("--------------");
+        console.log(sidx);
+        console.log("--------------");
         let _hasItag = false
         if (sidx) {
           if (sidx.itag !== 'null') {
@@ -74,8 +77,8 @@ class UserSocketYotube {
           }
           console.log(`Set REDIS sidx manifest for ${obj.uuid}`);
           emit(this.socket, `rad:youtube:sidx:${obj.uuid}:resp`, manifestData)
-          console.log('REDIS.setSidx(');
-          REDIS.setSidx(obj.uuid, manifestData)
+          console.log(`REDIS.setSidx() ${obj.uuid}`);
+          REDIS.youtube.setSidx(obj.uuid, manifestData)
         }
       })
       .catch((e) => {
@@ -102,13 +105,13 @@ class UserSocketYotube {
     if (obj.force) {
       this._requestYoutubePlaylistItems(obj)
         .then(playlistItems => {
-          console.log('REDIS.setYoutubePlaylistItems');
-          REDIS.setYoutubePlaylistItems(playlistId, playlistItems).finally()
+          console.log('REDIS.youtube.setYoutubePlaylistItems');
+          REDIS.youtube.setYoutubePlaylistItems(playlistId, playlistItems).finally()
           emit(this.socket, _response, playlistItems)
         })
     } else {
-      console.log('REDIS.getPlaylistItems(playlistId)');
-      REDIS.getPlaylistItems(playlistId)
+      console.log('REDIS.youtube.getPlaylistItems(playlistId)');
+      REDIS.youtube.getPlaylistItems(playlistId)
         .then((items) => {
           console.log(`Got REDIS playlistItems ${playlistId}`);
           let _playlistItems = { items: items }
@@ -119,8 +122,8 @@ class UserSocketYotube {
           console.log('Requesting');
           this._requestYoutubePlaylistItems(obj)
             .then(playlistItems => {
-              console.log('REDIS.setYoutubePlaylistItems');
-              REDIS.setYoutubePlaylistItems(playlistId, playlistItems).finally()
+              console.log('REDIS.youtube.setYoutubePlaylistItems');
+              REDIS.youtube.setYoutubePlaylistItems(playlistId, playlistItems).finally()
               emit(this.socket, _response, playlistItems)
             })
         })
@@ -128,9 +131,10 @@ class UserSocketYotube {
   }
 
   onYoutubeSearch(obj) {
-    return YT.search(obj).then((data) => {
-      emit(this.socket, `rad:youtube:search:resp`, JSON.parse(data.body))
-    }).finally();
+    return YT.search(obj)
+      .then((data) => {
+        emit(this.socket, `rad:youtube:search:resp`, JSON.parse(data.body))
+      }).finally();
   }
 
   onYoutubeVideo(obj) {

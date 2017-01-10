@@ -9,6 +9,8 @@ const request = require('request');
 var SIDX = require('@samelie/node-youtube-dash-sidx');
 const SocketRecord = require('./socket_record');
 const SocketYoutube = require('./socket_youtube');
+const SocketInstagram = require('./socket_instagram');
+const SocketUser = require('./socket_user');
 
 //UPLOAD.init({ "web": { "client_id": "791164201854-59lj1a5dd75moqgfr4fj63ug604pmq03.apps.googleusercontent.com", "project_id": "samtest-144107", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://accounts.google.com/o/oauth2/token", "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "client_secret": "VjcK9-gpfLnjWJuIXsEsAPUS", "redirect_uris": ["http://localhost:5000/oauth2callback"], "javascript_origins": ["http://localhost:5000"] } }, 'PLuTh1a1eg5vZavHvi60x_7SDq_pm4W4ID')
 
@@ -49,6 +51,10 @@ const SOCKET = function(router, express) {
       userMaterials[socket.id].recorder.saveDirectory = TEMP_DIR
       userMaterials[socket.id].youtube = new SocketYoutube(router, socket)
       userMaterials[socket.id].youtube.saveDirectory = TEMP_DIR
+      userMaterials[socket.id].user = new SocketUser(router, socket)
+      userMaterials[socket.id].user.saveDirectory = TEMP_DIR
+      userMaterials[socket.id].instagram = new SocketInstagram(router, socket)
+      userMaterials[socket.id].instagram.saveDirectory = TEMP_DIR
 
       //*********
       //*********

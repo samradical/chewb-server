@@ -18,7 +18,13 @@ VideoJS [supports](https://github.com/videojs/videojs-contrib-dash/issues/89) it
 
 Assuming here VideoJS extracts the [cenc](https://bitdash-a.akamaihd.net/content/art-of-motion_drm/mpds/11331.mpd) key for you.
 
+### Encoding with DRM
 
+
+Remember iframe interval to match dash segmentation
+
+
+https://www.axinom.com/creating-multi-drm-protected-videos-with-free-tools/
 
 
 
