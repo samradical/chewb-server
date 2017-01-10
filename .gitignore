@@ -11,3 +11,4 @@ _out
 *.mp4
 npm-debug.log
 *.m4a
+envvars
