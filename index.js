@@ -17,6 +17,8 @@ const SIDX = require('@samelie/node-youtube-dash-sidx');
 
 class Chewb {
     constructor(envarsPath) {
+
+        console.log(envarsPath);
         require('dotenv').config({ path: envarsPath });
 
         if (process.env.YOUTUBE_DL_PATH) {
