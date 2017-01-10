@@ -7,9 +7,9 @@
     "build": "browserify main.js > dist/chewb.js --bare"
   },
   "dependencies": {
-    "@samelie/chewb-redis": "*",
-    "@samelie/google-cloudstorage": "*",
-    "@samelie/node-youtube-dash-sidx": "*",
+    "@samelie/chewb-redis": "git://github.com/samradical/chewb-redis.git",
+    "@samelie/google-cloudstorage": "git://github.com/samradical/google-cloudstorage.git",
+    "@samelie/node-youtube-dash-sidx": "git://github.com/samradical/node-youtube-dash-sidx.git",
     "bcrypt-nodejs": "latest",
     "bluebird": "^3.2.1",
     "body-parser": "~1.0.0",
