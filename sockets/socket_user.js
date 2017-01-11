@@ -11,6 +11,7 @@ class UserSocketYotube {
     this.onStoreVideo = this.onStoreVideo.bind(this)
     this.socket.on('rad:user:login', this.onLogin)
     this.socket.on('rad:user:videos', this.onStoreVideo)
+    console.log('rad:user:login');
   }
 
   set saveDirectory(d) {
