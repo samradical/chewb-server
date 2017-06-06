@@ -21,7 +21,7 @@
     "check-types": "^7.0.1",
     "chewb-redis": "^0.3.1",
     "colors": "^1.1.2",
-    "connect-busboy": "latest",
+    "connect-busboy": "0.0.2",
     "connect-flash": "~0.1.1",
     "cookie-parser": "~1.0.0",
     "cors": "^2.7.1",
