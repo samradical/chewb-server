@@ -1,7 +1,7 @@
 const tmp = require('tmp');
 const request = require('request');
-const SIDX = require('@samelie/node-youtube-dash-sidx');
-const DASHSAVE = require('@samelie/mp4-dash-record');
+const SIDX = require('node-dash-sidx');
+const DASHSAVE = require('mp4-dash-record');
 const REDIS = require('./redis');
 const YT = require('../services/youtube');
 
@@ -11,12 +11,14 @@ class UserSocketYotube {
   constructor(router, socket) {
     //express routing
     this.socket = socket
+    this.onGetVideoUrl = this.onGetVideoUrl.bind(this)
     this.onGetVideoSidx = this.onGetVideoSidx.bind(this)
     this.onGetYoutubePlaylistItems = this.onGetYoutubePlaylistItems.bind(this)
     this.onYoutubeSearch = this.onYoutubeSearch.bind(this)
     this.onYoutubeVideo = this.onYoutubeVideo.bind(this)
     this.onRange = this.onRange.bind(this)
     socket.on('rad:youtube:sidx', this.onGetVideoSidx)
+    socket.on('rad:youtube:url', this.onGetVideoUrl)
     socket.on('rad:youtube:playlist:items', this.onGetYoutubePlaylistItems)
     socket.on('rad:youtube:search', this.onYoutubeSearch)
     socket.on('rad:youtube:video', this.onYoutubeVideo)
@@ -30,6 +32,7 @@ class UserSocketYotube {
     data[0]
     */
     console.log("chewb socket_youtube, onGetVideoSidx() SIDX with");
+    console.log("--------------");
     console.log(obj);
     /*Get existing manifest*/
     REDIS.youtube.getSidx(obj.uuid)
@@ -61,16 +64,36 @@ class UserSocketYotube {
       })
       //no SIDX in REDIS
       .catch(err => {
-        console.log(`Getting sidx manifest for ${obj.uuid}`);
+        console.log(`Error getting sidx manifest for ${obj.uuid}`);
         this._requestSidxAndAdd(obj)
       })
   }
 
+  onGetVideoUrl(obj) {
+    /*
+    returns an array on length 1
+    data[0]
+    */
+    console.log("chewb socket_youtube, onGetVideoUrl() SIDX with ");
+    console.log("--------");
+    console.log(obj);
+
+    const itag = obj.itags[0] || obj.itags || obj.itag
+
+    return SIDX.getURL(obj.videoId, itag)
+      .then((data) => {
+        emit(this.socket, `rad:youtube:url:${obj.uuid}:resp`, { url: data })
+      })
+      .catch((e) => {});
+  }
+
   _requestSidxAndAdd(obj) {
+    console.log("SIDX.start _requestSidxAndAdd");
+    console.log(obj);
     return SIDX.start(obj)
       .then((data) => {
         if (this.socket) {
-          let manifestData = data
+          let manifestData = data[0]
           if (!manifestData) {
             throw new Error(`No manifest data ${obj.uuid}`)
             return

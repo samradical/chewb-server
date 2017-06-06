@@ -1,10 +1,7 @@
 # chewb
-Mainly for piping videos to dash-player over websockets
+Mainly for piping videos to dash-player over websockets.
 
-Will need to clone [node-youtube-dash-sidx](https://github.com/samradical/node-youtube-dash-sidx) and do `npm link`
-
-`npm i`
-`node mains.js`
+[Dash-player]() implements it.
 
 ##Notes on DASH DRM (digital copy write)
 
@@ -25,7 +22,7 @@ Remember iframe interval to match dash segmentation
 
 
 https://www.axinom.com/creating-multi-drm-protected-videos-with-free-tools/
-
+"@samelie/chewb-redis": "git://github.com/samradical/chewb-redis.git",
 
 
 

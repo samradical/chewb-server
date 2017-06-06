@@ -6,7 +6,7 @@ const path = require('path');
 const _ = require('lodash');
 const tmp = require('tmp');
 const request = require('request');
-var SIDX = require('@samelie/node-youtube-dash-sidx');
+var SIDX = require('node-dash-sidx');
 const SocketRecord = require('./socket_record');
 const SocketYoutube = require('./socket_youtube');
 const SocketInstagram = require('./socket_instagram');
@@ -34,6 +34,7 @@ const SOCKET = function(router, express) {
     console.log("Dir: ", TEMP_DIR);
     fs.chmodSync(TEMP_DIR, '0777')
     SIDX.setTempSaveDir(TEMP_DIR)
+    SIDX.setYoutubeDLPath(process.env.YOUTUBE_DL)
 
     var users = {};
     var userMaterials = {}

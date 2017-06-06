@@ -1,4 +1,4 @@
-const DASHSAVE = require('@samelie/mp4-dash-record');
+const DASHSAVE = require('mp4-dash-record');
 const GOOGLE = require('../services/gcloud');
 const uuid = require('uuid');
 const path = require('path');
@@ -20,7 +20,7 @@ class UserRecordSocket {
     this._saveHash = uuid.v4()
     this.saveDirectory = path.join(this.saveDirectory, this._saveHash)
     fs.mkdirSync(this.saveDirectory)
-    this._recorder = new DASHSAVE()
+    this._recorder = new DASHSAVE({ffmpegPath:process.env.FFMPEG_PATH})
     this._recorder.saveDirectory = this.saveDirectory
     console.log(this.saveDirectory);
   }

@@ -29,6 +29,7 @@ class UserSocketYotube {
   */
   onLogin(obj) {
     let { username } = obj
+    console.log("Here");
     console.log(Colors.yellow(`onLogin() ${JSON.stringify(obj)}`));
     return REDIS.user.login(username).then((data) => {
       emit(this.socket, `rad:user:login:resp`, data)

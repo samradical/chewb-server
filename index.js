@@ -11,16 +11,15 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 
-const SIDX = require('@samelie/node-youtube-dash-sidx');
+const SIDX = require('node-dash-sidx');
 
 //require('./auth/passport')(passport);
 
 class Chewb {
     constructor(envarsPath) {
 
-        console.log(envarsPath);
         require('dotenv').config({ path: envarsPath });
-
+            console.log(process.env);
         if (process.env.YOUTUBE_DL_PATH) {
             SIDX.setYoutubeDLPath(process.env.YOUTUBE_DL_PATH)
         }
@@ -61,6 +60,8 @@ class Chewb {
 
         this.port = _port
         this.host = _host
+
+        this.sidx = SIDX
 
     }
 }

@@ -11,7 +11,7 @@ var xray = require('x-ray');
 
 var trendingTodayPlaylist = "PLbpi6ZahtOH7h9OULR1AVb4i8zo0ctwEr";
 var YT = require('../services/youtube');
-var SIDX = require('@samelie/node-youtube-dash-sidx');
+var SIDX = require('@node-dash-sidx');
 
 var CHANNEL_UPLOADS = 'https://www.youtube.com/channel/';
 

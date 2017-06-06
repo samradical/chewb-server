@@ -1,4 +1,4 @@
-const GOOGLE = require('@samelie/google-cloudstorage')
+const GOOGLE = require('google-cloudstorage-commands')
 
 var fs = require('fs');
 var path = require('path');

@@ -1,20 +1,25 @@
 {
-  "name": "@samelie/chewb",
-  "version": "0.1.0",
+  "name": "chewb",
+  "description": "",
+  "homepage": "https://github.com/samradical/chewb",
+  "author": "Sam Elie <samradelie@gmail.com>",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samradical/chewb.git",
+    "web": "https://github.com/samradical/chewb/"
+  },
   "main": "index.js",
   "scripts": {
     "start": "node main.js",
     "build": "browserify main.js > dist/chewb.js --bare"
   },
   "dependencies": {
-    "@samelie/chewb-redis": "git://github.com/samradical/chewb-redis.git",
-    "@samelie/google-cloudstorage": "git://github.com/samradical/google-cloudstorage.git",
-    "@samelie/node-youtube-dash-sidx": "git://github.com/samradical/node-youtube-dash-sidx.git",
-    "@samelie/mp4-dash-record": "git://github.com/samradical/mp4-dash-record.git",
     "bcrypt-nodejs": "latest",
     "bluebird": "^3.2.1",
     "body-parser": "~1.0.0",
     "check-types": "^7.0.1",
+    "chewb-redis": "^0.3.1",
     "colors": "^1.1.2",
     "connect-busboy": "latest",
     "connect-flash": "~0.1.1",
@@ -24,12 +29,15 @@
     "express": "^4.0.0",
     "express-session": "~1.0.0",
     "fluent-ffmpeg": "^2.1.0",
+    "google-cloudstorage-commands": "0.0.1",
     "instagram-api": "^1.0.3",
     "ip": "1.0.1",
     "lodash": "^4.0.0",
     "method-override": "~1.0.0",
     "morgan": "~1.0.0",
+    "mp4-dash-record": "^0.1.0",
     "multiparty": "^4.1.0",
+    "node-dash-sidx": "^0.1.0",
     "osc-receiver": "1.1.0",
     "passport": "~0.1.17",
     "passport-google-oauth": "~0.1.5",
@@ -47,10 +55,17 @@
     "yargs": "3.32.0"
   },
   "engines": {
-    "node": "~5.1.0"
+    "node": "~6.1.0"
   },
-  "devDependencies": {
-    "browserify": "^13.1.0",
-    "shelljs": "^0.7.0"
-  }
+  "devDependencies": {},
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/samradical/chewb/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/samradical/chewb/raw/master/LICENSE.md"
+    }
+  ]
 }

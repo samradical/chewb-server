@@ -1,4 +1,4 @@
-const Redis = require('@samelie/chewb-redis');
+const Redis = require('chewb-redis');
 const REDIS = (() => {
 
   let isLocal = (process.env.REDIS_HOST === '127.0.0.1' || process.env.REDIS_LOCAL)
