@@ -1,13 +1,13 @@
 {
-  "name": "chewb",
+  "name": "chewb-server",
   "description": "",
-  "homepage": "https://github.com/samradical/chewb",
+  "homepage": "https://github.com/samradical/chewb-server",
   "author": "Sam Elie <samradelie@gmail.com>",
-  "version": "0.0.1",
+  "version": "0.0.11",
   "repository": {
     "type": "git",
-    "url": "https://github.com/samradical/chewb.git",
-    "web": "https://github.com/samradical/chewb/"
+    "url": "https://github.com/samradical/chewb-server.git",
+    "web": "https://github.com/samradical/chewb-server/"
   },
   "main": "index.js",
   "scripts": {
@@ -37,7 +37,7 @@
     "morgan": "~1.0.0",
     "mp4-dash-record": "^0.1.0",
     "multiparty": "^4.1.0",
-    "node-dash-sidx": "^0.1.0",
+    "node-dash-sidx": "^0.1.1",
     "osc-receiver": "1.1.0",
     "passport": "~0.1.17",
     "passport-google-oauth": "~0.1.5",
@@ -60,12 +60,12 @@
   "devDependencies": {},
   "keywords": [],
   "bugs": {
-    "url": "https://github.com/samradical/chewb/issues"
+    "url": "https://github.com/samradical/chewb-server/issues"
   },
   "licenses": [
     {
       "type": "MIT",
-      "url": "https://github.com/samradical/chewb/raw/master/LICENSE.md"
+      "url": "https://github.com/samradical/chewb-server/raw/master/LICENSE.md"
     }
   ]
 }
